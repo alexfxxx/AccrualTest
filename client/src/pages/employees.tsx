@@ -34,7 +34,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate, getStatusVariant, calculateCPF, calculateEmployeeCost } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
+import { Plus, Pencil, Trash2, Download, Upload } from "lucide-react";
 import type { Employee } from "@shared/schema";
 
 const employeeFormSchema = z.object({
@@ -57,8 +58,13 @@ type EmployeeFormData = z.infer<typeof employeeFormSchema>;
 
 export default function Employees() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
+
+  const handleExport = () => {
+    window.open("/api/employees/export", "_blank");
+  };
 
   const { data: employees, isLoading } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
@@ -264,13 +270,22 @@ export default function Employees() {
         title="Employees"
         description="Manage employee records with CPF/levy calculations"
         actions={
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-employee">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Employee
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} data-testid="button-export-employees">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} data-testid="button-import-employees">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-employee">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Employee
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -509,7 +524,16 @@ export default function Employees() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+      />
+
+      <CsvImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        endpoint="/api/employees"
+        queryKey="/api/employees"
+        entityName="Employees"
       />
 
       <DataTable

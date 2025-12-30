@@ -35,7 +35,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency, getStatusVariant } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
+import { Plus, Pencil, Trash2, Download, Upload } from "lucide-react";
 import type { RouteWithRelations, Customer, Vehicle } from "@shared/schema";
 
 const routeFormSchema = z.object({
@@ -54,9 +55,14 @@ type RouteFormData = z.infer<typeof routeFormSchema>;
 
 export default function Routes() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<RouteWithRelations | null>(null);
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const { toast } = useToast();
+
+  const handleExport = () => {
+    window.open("/api/routes/export", "_blank");
+  };
 
   const { data: routes, isLoading } = useQuery<RouteWithRelations[]>({
     queryKey: ["/api/routes"],
@@ -252,13 +258,22 @@ export default function Routes() {
         title="Routes"
         description="Manage bus routes and contracts"
         actions={
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-route">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Route
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} data-testid="button-export-routes">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} data-testid="button-import-routes">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-route">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Route
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -462,7 +477,16 @@ export default function Routes() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+      />
+
+      <CsvImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        endpoint="/api/routes"
+        queryKey="/api/routes"
+        entityName="Routes"
       />
 
       <div className="flex items-center gap-4">

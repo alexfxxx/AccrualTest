@@ -35,7 +35,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate, getStatusVariant } from "@/lib/utils";
-import { Plus, Pencil, Trash2, ChevronLeft } from "lucide-react";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
+import { Plus, Pencil, Trash2, ChevronLeft, Download, Upload } from "lucide-react";
 import type { VehicleWithRelations, VehicleInstallment, VehicleInsurance, VehicleParking } from "@shared/schema";
 
 const vehicleFormSchema = z.object({
@@ -53,9 +54,14 @@ type VehicleFormData = z.infer<typeof vehicleFormSchema>;
 
 export default function Vehicles() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehicleWithRelations | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithRelations | null>(null);
   const { toast } = useToast();
+
+  const handleExport = () => {
+    window.open("/api/vehicles/export", "_blank");
+  };
 
   const { data: vehicles, isLoading } = useQuery<VehicleWithRelations[]>({
     queryKey: ["/api/vehicles"],
@@ -229,13 +235,22 @@ export default function Vehicles() {
         title="Vehicles"
         description="Manage your vehicle fleet"
         actions={
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-vehicle">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Vehicle
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} data-testid="button-export-vehicles">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} data-testid="button-import-vehicles">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-vehicle">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vehicle
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -384,7 +399,16 @@ export default function Vehicles() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+      />
+
+      <CsvImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        endpoint="/api/vehicles"
+        queryKey="/api/vehicles"
+        entityName="Vehicles"
       />
 
       <DataTable

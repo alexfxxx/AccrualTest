@@ -33,7 +33,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency, getStatusVariant } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
+import { Plus, Pencil, Trash2, Download, Upload } from "lucide-react";
 import type { Subcontractor, Customer, Route } from "@shared/schema";
 
 const subcontractorFormSchema = z.object({
@@ -51,8 +52,13 @@ type SubcontractorFormData = z.infer<typeof subcontractorFormSchema>;
 
 export default function Subcontractors() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null);
   const { toast } = useToast();
+
+  const handleExport = () => {
+    window.open("/api/subcontractors/export", "_blank");
+  };
 
   const { data: subcontractors, isLoading } = useQuery<Subcontractor[]>({
     queryKey: ["/api/subcontractors"],
@@ -284,13 +290,22 @@ export default function Subcontractors() {
         title="Subcontractors"
         description="Manage subcontractors for outsourced routes"
         actions={
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-subcontractor">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Subcontractor
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} data-testid="button-export-subcontractors">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} data-testid="button-import-subcontractors">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-subcontractor">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Subcontractor
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
@@ -471,7 +486,16 @@ export default function Subcontractors() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+      />
+
+      <CsvImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        endpoint="/api/subcontractors"
+        queryKey="/api/subcontractors"
+        entityName="Subcontractors"
       />
 
       <DataTable
