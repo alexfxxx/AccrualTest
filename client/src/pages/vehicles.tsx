@@ -543,7 +543,7 @@ function VehicleDetail({
           <TabsTrigger value="parking" data-testid="tab-parking">Parking</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
@@ -578,6 +578,173 @@ function VehicleDetail({
               </CardContent>
             </Card>
           </div>
+
+          {/* Finance Summary */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Finance Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Insurance Summary */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Insurance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {loadingInsurance ? (
+                    <p className="text-muted-foreground">Loading...</p>
+                  ) : insurance && insurance.length > 0 ? (
+                    <>
+                      {insurance.map((ins, idx) => (
+                        <div key={ins.id} className={idx > 0 ? "pt-3 border-t" : ""}>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Provider:</span>
+                            <span className="font-medium">{ins.provider}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Premium:</span>
+                            <span className="font-mono tabular-nums">{formatCurrency(ins.premium)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Coverage:</span>
+                            <span>{ins.coverageType ?? "-"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Renewal:</span>
+                            <span>{formatDate(ins.endDate)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">No insurance records</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Finance/Installment Summary */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Financing</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {loadingInstallments ? (
+                    <p className="text-muted-foreground">Loading...</p>
+                  ) : installments && installments.length > 0 ? (
+                    <>
+                      {installments.map((inst, idx) => {
+                        const today = new Date();
+                        const startDate = new Date(inst.startDate);
+                        const endDate = new Date(inst.endDate);
+                        const monthlyAmount = parseFloat(inst.monthlyAmount);
+                        
+                        const totalMonths = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+                        const elapsedMonths = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+                        const remainingMonths = Math.max(0, totalMonths - elapsedMonths);
+                        const balanceRemaining = remainingMonths * monthlyAmount;
+                        
+                        return (
+                          <div key={inst.id} className={idx > 0 ? "pt-3 border-t" : ""}>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Finance Company:</span>
+                              <span className="font-medium">{inst.lender ?? "-"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Monthly Payment:</span>
+                              <span className="font-mono tabular-nums">{formatCurrency(inst.monthlyAmount)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Period:</span>
+                              <span>{formatDate(inst.startDate)} - {formatDate(inst.endDate)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Months Remaining:</span>
+                              <span>{remainingMonths} of {totalMonths}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Balance Remaining:</span>
+                              <span className="font-mono tabular-nums font-medium">{formatCurrency(balanceRemaining.toFixed(2))}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">No financing records</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Installment Schedule Table */}
+          {installments && installments.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Installment Schedule</h3>
+              {installments.map((inst) => {
+                const today = new Date();
+                const startDate = new Date(inst.startDate);
+                const endDate = new Date(inst.endDate);
+                const monthlyAmount = parseFloat(inst.monthlyAmount);
+                
+                const scheduleRows: { month: string; dueDate: Date; amount: number; remainingBalance: number; isPast: boolean }[] = [];
+                let current = new Date(startDate);
+                current.setDate(1);
+                
+                const allMonths: Date[] = [];
+                while (current <= endDate) {
+                  allMonths.push(new Date(current));
+                  current.setMonth(current.getMonth() + 1);
+                }
+                
+                allMonths.forEach((monthDate, idx) => {
+                  const monthLabel = monthDate.toLocaleDateString("en-SG", { year: "numeric", month: "short" });
+                  const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 15);
+                  const remainingPayments = allMonths.length - idx - 1;
+                  const remainingBalance = remainingPayments * monthlyAmount;
+                  const isPast = dueDate < today;
+                  
+                  scheduleRows.push({
+                    month: monthLabel,
+                    dueDate,
+                    amount: monthlyAmount,
+                    remainingBalance,
+                    isPast,
+                  });
+                });
+                
+                return (
+                  <Card key={inst.id}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">{inst.lender ?? "Financing"} - {formatCurrency(inst.monthlyAmount)}/month</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="max-h-60 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-background border-b z-10">
+                            <tr>
+                              <th className="text-left py-2 px-3">Month</th>
+                              <th className="text-left py-2 px-3">Due Date</th>
+                              <th className="text-right py-2 px-3">Amount</th>
+                              <th className="text-right py-2 px-3">Balance After</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {scheduleRows.map((row) => (
+                              <tr key={row.month} className={row.isPast ? "text-muted-foreground" : ""}>
+                                <td className="py-2 px-3">{row.month}</td>
+                                <td className="py-2 px-3">{row.dueDate.toLocaleDateString("en-SG")}</td>
+                                <td className="py-2 px-3 text-right font-mono tabular-nums">{formatCurrency(row.amount.toFixed(2))}</td>
+                                <td className="py-2 px-3 text-right font-mono tabular-nums">{formatCurrency(row.remainingBalance.toFixed(2))}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="installments" className="space-y-4">

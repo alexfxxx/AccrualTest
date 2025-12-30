@@ -291,6 +291,60 @@ export default function ReportsCashFlow() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                Expense Breakdown by Category
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Month</TableHead>
+                      <TableHead className="text-right">Vehicle Installments</TableHead>
+                      <TableHead className="text-right">Vehicle Insurance</TableHead>
+                      <TableHead className="text-right">Vehicle Parking</TableHead>
+                      <TableHead className="text-right">Employee Costs</TableHead>
+                      <TableHead className="text-right">Subcontractors</TableHead>
+                      <TableHead className="text-right">Other Expenses</TableHead>
+                      <TableHead className="text-right font-medium">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {forecast?.months.map((month, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{month.month}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.vehicleInstallments)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.vehicleInsurance)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.vehicleParking)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.employeeCosts)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.subcontractorCosts)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {formatCurrency(month.details.recurringExpenses)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums font-medium text-chart-5">
+                          {formatCurrency(month.outflows)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
