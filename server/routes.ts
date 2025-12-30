@@ -983,5 +983,17 @@ export async function registerRoutes(
     }
   });
 
+  // Seed Database
+  app.post("/api/seed", async (req, res) => {
+    try {
+      const { seedDatabase } = await import("./seed");
+      await seedDatabase();
+      res.json({ success: true, message: "Database seeded successfully" });
+    } catch (error) {
+      console.error("Seed error:", error);
+      res.status(500).json({ error: "Failed to seed database" });
+    }
+  });
+
   return httpServer;
 }
