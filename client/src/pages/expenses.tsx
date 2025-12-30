@@ -191,15 +191,22 @@ export default function Expenses() {
     {
       header: "Date",
       accessor: (row: ExpenseWithRelations) => formatDate(row.expenseDate),
+      sortKey: (row: ExpenseWithRelations) => row.expenseDate,
     },
-    { header: "Description", accessor: "description" as const },
+    {
+      header: "Description",
+      accessor: "description" as const,
+      sortKey: (row: ExpenseWithRelations) => row.description,
+    },
     {
       header: "Category",
       accessor: (row: ExpenseWithRelations) => row.category?.name ?? "-",
+      sortKey: (row: ExpenseWithRelations) => row.category?.name ?? "",
     },
     {
       header: "Vehicle",
       accessor: (row: ExpenseWithRelations) => row.vehicle?.registrationNumber ?? "-",
+      sortKey: (row: ExpenseWithRelations) => row.vehicle?.registrationNumber ?? "",
     },
     {
       header: "Amount",
@@ -207,6 +214,7 @@ export default function Expenses() {
         <span className="font-mono tabular-nums">{formatCurrency(row.amount)}</span>
       ),
       className: "text-right",
+      sortKey: (row: ExpenseWithRelations) => parseFloat(row.amount),
     },
     {
       header: "Recurring",
@@ -216,6 +224,7 @@ export default function Expenses() {
         ) : (
           "-"
         ),
+      sortKey: (row: ExpenseWithRelations) => row.isRecurring ? 1 : 0,
     },
     {
       header: "Actions",

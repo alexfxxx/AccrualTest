@@ -178,14 +178,17 @@ export default function Income() {
     {
       header: "Period",
       accessor: (row: IncomeRecordWithRelations) => formatBillingPeriod(row.billingPeriod),
+      sortKey: (row: IncomeRecordWithRelations) => row.billingPeriod,
     },
     {
       header: "Customer",
       accessor: (row: IncomeRecordWithRelations) => row.customer?.name ?? "-",
+      sortKey: (row: IncomeRecordWithRelations) => row.customer?.name ?? "",
     },
     {
       header: "Route",
       accessor: (row: IncomeRecordWithRelations) => row.route?.name ?? "-",
+      sortKey: (row: IncomeRecordWithRelations) => row.route?.name ?? "",
     },
     {
       header: "Type",
@@ -194,6 +197,7 @@ export default function Income() {
           {row.incomeType}
         </Badge>
       ),
+      sortKey: (row: IncomeRecordWithRelations) => row.incomeType,
     },
     {
       header: "Amount",
@@ -201,16 +205,19 @@ export default function Income() {
         <span className="font-mono tabular-nums">{formatCurrency(row.amount)}</span>
       ),
       className: "text-right",
+      sortKey: (row: IncomeRecordWithRelations) => parseFloat(row.amount),
     },
     {
       header: "Due Date",
       accessor: (row: IncomeRecordWithRelations) => formatDate(row.dueDate),
+      sortKey: (row: IncomeRecordWithRelations) => row.dueDate ?? "",
     },
     {
       header: "Status",
       accessor: (row: IncomeRecordWithRelations) => (
         <Badge variant={getStatusVariant(row.paymentStatus)}>{row.paymentStatus}</Badge>
       ),
+      sortKey: (row: IncomeRecordWithRelations) => row.paymentStatus,
     },
     {
       header: "Actions",
