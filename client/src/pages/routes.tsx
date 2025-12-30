@@ -55,6 +55,7 @@ type RouteFormData = z.infer<typeof routeFormSchema>;
 export default function Routes() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<RouteWithRelations | null>(null);
+  const [customerFilter, setCustomerFilter] = useState<string>("all");
   const { toast } = useToast();
 
   const { data: routes, isLoading } = useQuery<RouteWithRelations[]>({
@@ -464,11 +465,42 @@ export default function Routes() {
         }
       />
 
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Filter by Customer:</span>
+          <Select value={customerFilter} onValueChange={setCustomerFilter}>
+            <SelectTrigger className="w-[250px]" data-testid="select-filter-customer">
+              <SelectValue placeholder="All Customers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Customers</SelectItem>
+              {customers?.map((c) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {customerFilter !== "all" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCustomerFilter("all")}
+            data-testid="button-clear-filter"
+          >
+            Clear filter
+          </Button>
+        )}
+      </div>
+
       <DataTable
         columns={columns}
-        data={routes ?? []}
+        data={(routes ?? []).filter(
+          (route) => customerFilter === "all" || route.customerId?.toString() === customerFilter
+        )}
         isLoading={isLoading}
-        emptyMessage="No routes found"
+        emptyMessage={customerFilter !== "all" ? "No routes found for this customer" : "No routes found"}
         emptyAction={
           <Button onClick={() => setIsOpen(true)} data-testid="button-add-first-route">
             <Plus className="h-4 w-4 mr-2" />
