@@ -254,3 +254,6 @@ export type SubcontractorWithRelations = Subcontractor & {
   customer?: Customer | null;
   route?: Route | null;
 };
+
+// Re-export chat models
+export * from "./models/chat";

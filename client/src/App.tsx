@@ -18,6 +18,7 @@ import Employees from "@/pages/employees";
 import Subcontractors from "@/pages/subcontractors";
 import ReportsPnL from "@/pages/reports-pnl";
 import ReportsCashFlow from "@/pages/reports-cashflow";
+import { AIAssistant } from "@/components/ai-assistant";
 
 function Router() {
   return (
@@ -62,6 +63,7 @@ function App() {
             </div>
           </SidebarProvider>
           <Toaster />
+          <AIAssistant />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

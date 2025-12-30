@@ -14,6 +14,8 @@ import {
   insertEmployeeSchema,
   insertSubcontractorSchema,
 } from "@shared/schema";
+import { registerChatRoutes } from "./replit_integrations/chat";
+import { registerImageRoutes } from "./replit_integrations/image";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -992,6 +994,119 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Seed error:", error);
       res.status(500).json({ error: "Failed to seed database" });
+    }
+  });
+
+  // Register AI chat and image routes
+  registerChatRoutes(app);
+  registerImageRoutes(app);
+
+  // AI Assistant endpoint with context from company data
+  app.post("/api/ai/ask", async (req, res) => {
+    try {
+      const { question } = req.body;
+      if (!question) {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      // Gather context from the database
+      const [customers, routes, employees, vehicles, expenses, income] = await Promise.all([
+        storage.getCustomers(),
+        storage.getRoutes(),
+        storage.getEmployees(),
+        storage.getVehicles(),
+        storage.getExpenses(),
+        storage.getIncomeRecords(),
+      ]);
+
+      // Build context summary
+      const activeRoutes = routes.filter(r => r.status === "active");
+      const activeEmployees = employees.filter(e => e.status === "active");
+      const localWorkers = activeEmployees.filter(e => e.workerType === "local");
+      const foreignWorkers = activeEmployees.filter(e => e.workerType === "foreign");
+      
+      const totalMonthlyIncome = activeRoutes.reduce((sum, r) => sum + parseFloat(r.monthlyRate), 0);
+      const totalMonthlySalaries = activeEmployees.reduce((sum, e) => {
+        const salary = parseFloat(e.salary);
+        const cpf = e.workerType === "local" ? salary * 0.17 : 0;
+        const levy = e.foreignWorkerLevy ? parseFloat(e.foreignWorkerLevy) : 0;
+        return sum + salary + cpf + levy;
+      }, 0);
+
+      const contextSummary = `
+Company: Singapore Transport Company (Bus Routes)
+Currency: SGD (Singapore Dollars)
+
+Current Statistics:
+- Total Customers: ${customers.length}
+- Active Routes: ${activeRoutes.length} (generating S$${totalMonthlyIncome.toLocaleString("en-SG", { minimumFractionDigits: 2 })} monthly)
+- Fleet Size: ${vehicles.length} vehicles
+- Employees: ${activeEmployees.length} (${localWorkers.length} local, ${foreignWorkers.length} foreign)
+- Monthly Payroll: S$${totalMonthlySalaries.toLocaleString("en-SG", { minimumFractionDigits: 2 })} (includes 17% CPF for locals)
+
+Recent Activity:
+- Total Income Records: ${income.length}
+- Total Expense Records: ${expenses.length}
+
+Key Information:
+- CPF (Central Provident Fund) rate for local workers: 17%
+- Foreign workers have levy charges instead of CPF
+`.trim();
+
+      // Set up SSE for streaming
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await openai.chat.completions.create({
+        model: "gpt-5.1",
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful AI assistant for a Singapore-based transport company's accounting system. You help users understand their financial data, answer questions about their business, and provide insights.
+
+Context about the company:
+${contextSummary}
+
+Guidelines:
+- Always use SGD (S$) for currency
+- Be concise but helpful
+- If asked about specific data, use the context provided
+- For calculations involving local workers, remember CPF is 17% employer contribution
+- If you don't have specific data to answer a question, explain what information would be needed`
+          },
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        stream: true,
+        max_completion_tokens: 1024,
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("AI Ask error:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to process question" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Failed to process question" });
+      }
     }
   });
 
