@@ -9,6 +9,7 @@ import {
   vehicleInsurance,
   vehicleParking,
   employees,
+  subcontractors,
   type Customer,
   type InsertCustomer,
   type Route,
@@ -29,6 +30,8 @@ import {
   type InsertVehicleParking,
   type Employee,
   type InsertEmployee,
+  type Subcontractor,
+  type InsertSubcontractor,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
@@ -92,6 +95,13 @@ export interface IStorage {
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
   deleteEmployee(id: number): Promise<void>;
+
+  // Subcontractors
+  getSubcontractors(): Promise<Subcontractor[]>;
+  getSubcontractor(id: number): Promise<Subcontractor | undefined>;
+  createSubcontractor(subcontractor: InsertSubcontractor): Promise<Subcontractor>;
+  updateSubcontractor(id: number, subcontractor: Partial<InsertSubcontractor>): Promise<Subcontractor | undefined>;
+  deleteSubcontractor(id: number): Promise<void>;
 
   // Reports
   getIncomeByPeriod(from: string, to: string): Promise<IncomeRecord[]>;
@@ -301,6 +311,30 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmployee(id: number): Promise<void> {
     await db.delete(employees).where(eq(employees.id, id));
+  }
+
+  // Subcontractors
+  async getSubcontractors(): Promise<Subcontractor[]> {
+    return db.select().from(subcontractors).orderBy(subcontractors.name);
+  }
+
+  async getSubcontractor(id: number): Promise<Subcontractor | undefined> {
+    const [subcontractor] = await db.select().from(subcontractors).where(eq(subcontractors.id, id));
+    return subcontractor;
+  }
+
+  async createSubcontractor(subcontractor: InsertSubcontractor): Promise<Subcontractor> {
+    const [created] = await db.insert(subcontractors).values(subcontractor).returning();
+    return created;
+  }
+
+  async updateSubcontractor(id: number, subcontractor: Partial<InsertSubcontractor>): Promise<Subcontractor | undefined> {
+    const [updated] = await db.update(subcontractors).set(subcontractor).where(eq(subcontractors.id, id)).returning();
+    return updated;
+  }
+
+  async deleteSubcontractor(id: number): Promise<void> {
+    await db.delete(subcontractors).where(eq(subcontractors.id, id));
   }
 
   // Reports

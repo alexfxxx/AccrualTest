@@ -12,6 +12,7 @@ import {
   insertVehicleInsuranceSchema,
   insertVehicleParkingSchema,
   insertEmployeeSchema,
+  insertSubcontractorSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(
@@ -392,6 +393,50 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete employee" });
+    }
+  });
+
+  // Subcontractors
+  app.get("/api/subcontractors", async (req, res) => {
+    try {
+      const subcontractors = await storage.getSubcontractors();
+      res.json(subcontractors);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch subcontractors" });
+    }
+  });
+
+  app.post("/api/subcontractors", async (req, res) => {
+    try {
+      const data = insertSubcontractorSchema.parse(req.body);
+      const subcontractor = await storage.createSubcontractor(data);
+      res.json(subcontractor);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid subcontractor data" });
+    }
+  });
+
+  app.put("/api/subcontractors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertSubcontractorSchema.partial().parse(req.body);
+      const subcontractor = await storage.updateSubcontractor(id, data);
+      if (!subcontractor) {
+        return res.status(404).json({ error: "Subcontractor not found" });
+      }
+      res.json(subcontractor);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid subcontractor data" });
+    }
+  });
+
+  app.delete("/api/subcontractors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSubcontractor(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete subcontractor" });
     }
   });
 
