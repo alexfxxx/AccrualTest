@@ -173,6 +173,24 @@ export const employees = pgTable("employees", {
   phone: text("phone"),
 });
 
+// Subcontractors
+export const subcontractors = pgTable("subcontractors", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  name: text("name").notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  routeId: integer("route_id").references(() => routes.id),
+  monthlyCost: decimal("monthly_cost", { precision: 12, scale: 2 }),
+  vehicleNumber: text("vehicle_number"),
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  status: text("status").notNull().default("active"), // active, inactive
+});
+
+export const subcontractorsRelations = relations(subcontractors, ({ one }) => ({
+  customer: one(customers, { fields: [subcontractors.customerId], references: [customers.id] }),
+  route: one(routes, { fields: [subcontractors.routeId], references: [routes.id] }),
+}));
+
 // Insert Schemas
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true });
 export const insertRouteSchema = createInsertSchema(routes).omit({ id: true });
@@ -184,6 +202,7 @@ export const insertVehicleInstallmentSchema = createInsertSchema(vehicleInstallm
 export const insertVehicleInsuranceSchema = createInsertSchema(vehicleInsurance).omit({ id: true });
 export const insertVehicleParkingSchema = createInsertSchema(vehicleParking).omit({ id: true });
 export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: true });
+export const insertSubcontractorSchema = createInsertSchema(subcontractors).omit({ id: true });
 
 // Types
 export type Customer = typeof customers.$inferSelect;
@@ -206,6 +225,8 @@ export type VehicleParking = typeof vehicleParking.$inferSelect;
 export type InsertVehicleParking = z.infer<typeof insertVehicleParkingSchema>;
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+export type Subcontractor = typeof subcontractors.$inferSelect;
+export type InsertSubcontractor = z.infer<typeof insertSubcontractorSchema>;
 
 // Extended types with relations
 export type RouteWithRelations = Route & {
@@ -227,4 +248,9 @@ export type VehicleWithRelations = Vehicle & {
   installments?: VehicleInstallment[];
   insurance?: VehicleInsurance[];
   parking?: VehicleParking[];
+};
+
+export type SubcontractorWithRelations = Subcontractor & {
+  customer?: Customer | null;
+  route?: Route | null;
 };
