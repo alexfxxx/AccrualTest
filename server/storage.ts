@@ -109,6 +109,13 @@ export interface IStorage {
   getAllVehicleInstallments(): Promise<VehicleInstallment[]>;
   getAllVehicleInsurance(): Promise<VehicleInsurance[]>;
   getAllVehicleParking(): Promise<VehicleParking[]>;
+
+  // Bulk operations for CSV import
+  bulkReplaceCustomers(data: InsertCustomer[]): Promise<void>;
+  bulkReplaceRoutes(data: InsertRoute[]): Promise<void>;
+  bulkReplaceVehicles(data: InsertVehicle[]): Promise<void>;
+  bulkReplaceEmployees(data: InsertEmployee[]): Promise<void>;
+  bulkReplaceSubcontractors(data: InsertSubcontractor[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -352,6 +359,42 @@ export class DatabaseStorage implements IStorage {
         gte(expenses.expenseDate, from),
         lte(expenses.expenseDate, to)
       ));
+  }
+
+  // Bulk operations for CSV import (truncate and insert)
+  async bulkReplaceCustomers(data: InsertCustomer[]): Promise<void> {
+    await db.delete(customers);
+    if (data.length > 0) {
+      await db.insert(customers).values(data);
+    }
+  }
+
+  async bulkReplaceRoutes(data: InsertRoute[]): Promise<void> {
+    await db.delete(routes);
+    if (data.length > 0) {
+      await db.insert(routes).values(data);
+    }
+  }
+
+  async bulkReplaceVehicles(data: InsertVehicle[]): Promise<void> {
+    await db.delete(vehicles);
+    if (data.length > 0) {
+      await db.insert(vehicles).values(data);
+    }
+  }
+
+  async bulkReplaceEmployees(data: InsertEmployee[]): Promise<void> {
+    await db.delete(employees);
+    if (data.length > 0) {
+      await db.insert(employees).values(data);
+    }
+  }
+
+  async bulkReplaceSubcontractors(data: InsertSubcontractor[]): Promise<void> {
+    await db.delete(subcontractors);
+    if (data.length > 0) {
+      await db.insert(subcontractors).values(data);
+    }
   }
 }
 

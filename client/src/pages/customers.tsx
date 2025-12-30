@@ -34,7 +34,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { getStatusVariant } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
+import { Plus, Pencil, Trash2, Download, Upload } from "lucide-react";
 import type { Customer } from "@shared/schema";
 
 const customerFormSchema = z.object({
@@ -50,8 +51,13 @@ type CustomerFormData = z.infer<typeof customerFormSchema>;
 
 export default function Customers() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
+
+  const handleExport = () => {
+    window.open("/api/customers/export", "_blank");
+  };
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -183,13 +189,22 @@ export default function Customers() {
         title="Customers"
         description="Manage customer companies that contract transport services"
         actions={
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-customer">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Customer
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} data-testid="button-export-customers">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} data-testid="button-import-customers">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-customer">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Customer
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -306,7 +321,16 @@ export default function Customers() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+      />
+
+      <CsvImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        endpoint="/api/customers"
+        queryKey="/api/customers"
+        entityName="Customers"
       />
 
       <DataTable

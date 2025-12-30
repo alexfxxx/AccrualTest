@@ -440,6 +440,250 @@ export async function registerRoutes(
     }
   });
 
+  // CSV Export endpoints
+  app.get("/api/customers/export", async (req, res) => {
+    try {
+      const data = await storage.getCustomers();
+      const headers = ["name", "contactPerson", "email", "phone", "address", "status"];
+      const csv = [
+        headers.join(","),
+        ...data.map(row => headers.map(h => `"${(row[h as keyof typeof row] ?? "").toString().replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=customers.csv");
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export customers" });
+    }
+  });
+
+  app.get("/api/routes/export", async (req, res) => {
+    try {
+      const data = await storage.getRoutes();
+      const customers = await storage.getCustomers();
+      const vehicles = await storage.getVehicles();
+      const headers = ["name", "customerName", "monthlyRate", "routeType", "subcontractorName", "subcontractorCost", "vehicleNumber", "status", "description"];
+      const csv = [
+        headers.join(","),
+        ...data.map(row => {
+          const customer = customers.find(c => c.id === row.customerId);
+          const vehicle = vehicles.find(v => v.id === row.vehicleId);
+          return [
+            `"${row.name}"`,
+            `"${customer?.name ?? ""}"`,
+            `"${row.monthlyRate}"`,
+            `"${row.routeType}"`,
+            `"${row.subcontractorName ?? ""}"`,
+            `"${row.subcontractorCost ?? ""}"`,
+            `"${vehicle?.registrationNumber ?? ""}"`,
+            `"${row.status}"`,
+            `"${(row.description ?? "").replace(/"/g, '""')}"`
+          ].join(",");
+        })
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=routes.csv");
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export routes" });
+    }
+  });
+
+  app.get("/api/vehicles/export", async (req, res) => {
+    try {
+      const data = await storage.getVehicles();
+      const headers = ["registrationNumber", "make", "model", "year", "capacity", "purchaseDate", "purchasePrice", "status"];
+      const csv = [
+        headers.join(","),
+        ...data.map(row => headers.map(h => `"${(row[h as keyof typeof row] ?? "").toString().replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=vehicles.csv");
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export vehicles" });
+    }
+  });
+
+  app.get("/api/employees/export", async (req, res) => {
+    try {
+      const data = await storage.getEmployees();
+      const headers = ["employeeId", "name", "position", "department", "workerType", "salary", "bonus", "foreignWorkerLevy", "status", "startDate", "endDate", "email", "phone"];
+      const csv = [
+        headers.join(","),
+        ...data.map(row => headers.map(h => `"${(row[h as keyof typeof row] ?? "").toString().replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=employees.csv");
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export employees" });
+    }
+  });
+
+  app.get("/api/subcontractors/export", async (req, res) => {
+    try {
+      const data = await storage.getSubcontractors();
+      const customers = await storage.getCustomers();
+      const routes = await storage.getRoutes();
+      const headers = ["name", "customerName", "routeName", "monthlyCost", "vehicleNumber", "contactPerson", "phone", "status"];
+      const csv = [
+        headers.join(","),
+        ...data.map(row => {
+          const customer = customers.find(c => c.id === row.customerId);
+          const route = routes.find(r => r.id === row.routeId);
+          return [
+            `"${row.name}"`,
+            `"${customer?.name ?? ""}"`,
+            `"${route?.name ?? ""}"`,
+            `"${row.monthlyCost ?? ""}"`,
+            `"${row.vehicleNumber ?? ""}"`,
+            `"${row.contactPerson ?? ""}"`,
+            `"${row.phone ?? ""}"`,
+            `"${row.status}"`
+          ].join(",");
+        })
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=subcontractors.csv");
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export subcontractors" });
+    }
+  });
+
+  // CSV Import endpoints
+  app.post("/api/customers/import", async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+      const parsed = data.map((row: Record<string, string>) => ({
+        name: row.name,
+        contactPerson: row.contactPerson || null,
+        email: row.email || null,
+        phone: row.phone || null,
+        address: row.address || null,
+        status: row.status || "active",
+      }));
+      await storage.bulkReplaceCustomers(parsed);
+      res.json({ success: true, count: parsed.length });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to import customers" });
+    }
+  });
+
+  app.post("/api/routes/import", async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+      const customers = await storage.getCustomers();
+      const vehicles = await storage.getVehicles();
+      const parsed = data.map((row: Record<string, string>) => {
+        const customer = customers.find(c => c.name === row.customerName);
+        const vehicle = vehicles.find(v => v.registrationNumber === row.vehicleNumber);
+        return {
+          name: row.name,
+          customerId: customer?.id || null,
+          monthlyRate: row.monthlyRate,
+          routeType: row.routeType || "owned",
+          subcontractorName: row.subcontractorName || null,
+          subcontractorCost: row.subcontractorCost || null,
+          vehicleId: vehicle?.id || null,
+          status: row.status || "active",
+          description: row.description || null,
+        };
+      });
+      await storage.bulkReplaceRoutes(parsed);
+      res.json({ success: true, count: parsed.length });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to import routes" });
+    }
+  });
+
+  app.post("/api/vehicles/import", async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+      const parsed = data.map((row: Record<string, string>) => ({
+        registrationNumber: row.registrationNumber,
+        make: row.make,
+        model: row.model,
+        year: row.year ? parseInt(row.year) : null,
+        capacity: row.capacity ? parseInt(row.capacity) : null,
+        purchaseDate: row.purchaseDate || null,
+        purchasePrice: row.purchasePrice || null,
+        status: row.status || "active",
+      }));
+      await storage.bulkReplaceVehicles(parsed);
+      res.json({ success: true, count: parsed.length });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to import vehicles" });
+    }
+  });
+
+  app.post("/api/employees/import", async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+      const parsed = data.map((row: Record<string, string>) => ({
+        employeeId: row.employeeId,
+        name: row.name,
+        position: row.position || null,
+        department: row.department || null,
+        workerType: row.workerType || "local",
+        salary: row.salary,
+        bonus: row.bonus || null,
+        foreignWorkerLevy: row.foreignWorkerLevy || null,
+        status: row.status || "active",
+        startDate: row.startDate || null,
+        endDate: row.endDate || null,
+        email: row.email || null,
+        phone: row.phone || null,
+      }));
+      await storage.bulkReplaceEmployees(parsed);
+      res.json({ success: true, count: parsed.length });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to import employees" });
+    }
+  });
+
+  app.post("/api/subcontractors/import", async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+      const customers = await storage.getCustomers();
+      const routes = await storage.getRoutes();
+      const parsed = data.map((row: Record<string, string>) => {
+        const customer = customers.find(c => c.name === row.customerName);
+        const route = routes.find(r => r.name === row.routeName);
+        return {
+          name: row.name,
+          customerId: customer?.id || null,
+          routeId: route?.id || null,
+          monthlyCost: row.monthlyCost || null,
+          vehicleNumber: row.vehicleNumber || null,
+          contactPerson: row.contactPerson || null,
+          phone: row.phone || null,
+          status: row.status || "active",
+        };
+      });
+      await storage.bulkReplaceSubcontractors(parsed);
+      res.json({ success: true, count: parsed.length });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to import subcontractors" });
+    }
+  });
+
   // Dashboard Stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
