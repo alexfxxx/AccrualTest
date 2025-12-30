@@ -1,0 +1,100 @@
+Build a comprehensive accrual accounting system for a Singapore-based transport company providing bus routes. The application should be a full-stack web application with the following specifications:
+Core Business Domain
+Customers & Routes Management:
+* Manage customer companies that contract transport services
+* Track individual bus routes linked to customers with monthly contract rates (in SGD)
+* Support owned routes (company operates directly) and subcontracted routes (outsourced to third parties with subcontractor costs)
+* Calculate route profitability: customer rate minus subcontractor cost for subcontracted routes
+* Track route status (active/inactive) and optionally assign vehicles to routes
+Income Tracking:
+* Record monthly income from customers based on contracted routes
+* Support ad-hoc trip income entries
+* Track payment status: pending, paid, overdue
+* Associate income records with specific routes and billing periods (YYYY-MM format)
+Expense Management:
+* Categorize expenses with hierarchical expense categories
+* Track recurring vs one-time expenses
+* Associate expenses with specific vehicles when applicable
+* Record expense descriptions, amounts, and dates
+Vehicle Fleet Management:
+* Track vehicles with registration numbers, make, model, year, capacity
+* Record vehicle purchase information (date, price)
+* Track vehicle status: active, inactive, maintenance
+* Sub-modules for each vehicle:
+    * Installments: Monthly loan/installment payments with start/end dates and amounts
+    * Insurance: Insurance policies with provider, policy number, premium, coverage period
+    * Parking: Monthly parking costs with location and dates
+Employee/HR Management:
+* Track employees with name, employee ID, position, department
+* Critical distinction between local and foreign workers:
+    * Local workers: Calculate 17% CPF (Central Provident Fund) contribution on salary
+    * Foreign workers: Apply custom monthly levy amount instead of CPF
+* Track salary, bonus amounts
+* Employee status: active, inactive
+* Start/end dates for employment period
+Financial Reporting
+Profit & Loss Reports:
+* Monthly and quarterly P&L statement generation
+* Date range filtering with proper period calculations
+* Income from routes and customers
+* Expenses by category
+* Pro-rated subcontractor costs based on selected period length
+* Net profit/loss calculation
+* Print/PDF export via browser print functionality
+Cash Flow Forecasting
+Project future cash flows:
+* Configurable projection periods: 3, 6, 12, or 24 months ahead
+* Inflows calculated from:
+    * Active route customer rates (monthly recurring revenue)
+    * Expected invoice payments based on due dates
+* Outflows calculated from:
+    * Vehicle installment payments
+    * Vehicle insurance premiums (pro-rated monthly)
+    * Vehicle parking costs
+    * Employee costs (salary + CPF for locals, salary + levy for foreigners)
+    * Subcontractor costs for subcontracted routes
+    * Recurring expenses from expense records
+* Visual charts: bar chart showing monthly inflows/outflows, line chart for cumulative balance
+* Monthly breakdown table with running balance
+CSV Import/Export
+Bulk data management for all entities:
+* Export to CSV with proper headers
+* Import from CSV with validation
+* Handle quoted fields and special characters
+* Import summary: count of imported, updated, and error records
+* Update existing records by ID or create new ones
+* Role-based access on import/export operations
+Dashboard
+Overview with key metrics:
+* Total income (current month and year-to-date)
+* Total expenses (current month and year-to-date)
+* Net profit/loss
+* Active routes count
+* Vehicle fleet status summary
+* Employee count
+* Recent transactions
+* Charts showing income vs expense trends
+Technical Stack
+Frontend:
+* React 18+ with TypeScript
+* Wouter for client-side routing
+* TanStack Query (React Query v5) for data fetching
+* Shadcn/ui components with Radix UI primitives
+* Tailwind CSS for styling
+* Recharts for data visualization
+* React Hook Form with Zod validation
+* Dark mode support
+Backend:
+* Node.js with Express.js
+* TypeScript with tsx for development
+* RESTful API design under /api prefix
+Database:
+* PostgreSQL (Neon serverless)
+* Drizzle ORM with schema-first approach
+* drizzle-zod for validation schema generation
+Design:
+* Singapore locale (SGD currency, en-SG formatting)
+* Dense information display suitable for financial applications
+* Fixed sidebar navigation
+* Mobile-responsive design
+Also include individual vehicle profitability, individual customer profitability.
