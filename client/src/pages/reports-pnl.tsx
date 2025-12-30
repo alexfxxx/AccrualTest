@@ -40,6 +40,11 @@ export default function ReportsPnL() {
 
   const { data: report, isLoading } = useQuery<PLReport>({
     queryKey: ["/api/reports/pnl", fromDate, toDate],
+    queryFn: async () => {
+      const res = await fetch(`/api/reports/pnl?from=${fromDate}&to=${toDate}`);
+      if (!res.ok) throw new Error("Failed to fetch P&L report");
+      return res.json();
+    },
   });
 
   const handlePrint = () => {

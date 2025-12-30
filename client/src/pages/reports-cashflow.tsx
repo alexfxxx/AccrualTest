@@ -63,6 +63,11 @@ export default function ReportsCashFlow() {
 
   const { data: forecast, isLoading } = useQuery<CashFlowForecast>({
     queryKey: ["/api/reports/cashflow", period],
+    queryFn: async () => {
+      const res = await fetch(`/api/reports/cashflow?period=${period}`);
+      if (!res.ok) throw new Error("Failed to fetch cash flow forecast");
+      return res.json();
+    },
   });
 
   return (
