@@ -15,6 +15,7 @@ import Income from "@/pages/income";
 import Expenses from "@/pages/expenses";
 import Vehicles from "@/pages/vehicles";
 import Employees from "@/pages/employees";
+import Subcontractors from "@/pages/subcontractors";
 import ReportsPnL from "@/pages/reports-pnl";
 import ReportsCashFlow from "@/pages/reports-cashflow";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/expenses" component={Expenses} />
       <Route path="/vehicles" component={Vehicles} />
       <Route path="/employees" component={Employees} />
+      <Route path="/subcontractors" component={Subcontractors} />
       <Route path="/reports/pnl" component={ReportsPnL} />
       <Route path="/reports/cashflow" component={ReportsCashFlow} />
       <Route component={NotFound} />

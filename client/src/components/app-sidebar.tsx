@@ -9,6 +9,7 @@ import {
   UserCog,
   FileText,
   TrendingUp,
+  Truck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,6 +38,7 @@ const navigationItems = [
       { title: "Routes", url: "/routes", icon: Route },
       { title: "Vehicles", url: "/vehicles", icon: Bus },
       { title: "Employees", url: "/employees", icon: UserCog },
+      { title: "Subcontractors", url: "/subcontractors", icon: Truck },
     ],
   },
   {
